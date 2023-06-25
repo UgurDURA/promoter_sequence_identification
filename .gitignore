@@ -7,3 +7,7 @@
 *.pyc
 *.pyc
 *.pyc
+*.pyc
+*.pyc
+src/Parser/__pycache__/parser.cpython-39.pyc
+src/Parser/__pycache__/parser_helpers.cpython-39.pyc
