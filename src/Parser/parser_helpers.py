@@ -26,12 +26,14 @@ def remove_dups(bedfile):
             f.write(line + "\n")
 
 
-def complementary(strand):
-    complementary= strand.replace("A", "t").replace(
-            "C", "g").replace("T", "a").replace("G", "c")
-    complementary = complementary.upper()
-    reverse_complementary=complementary[::-1]
-    return reverse_complementary
+def reverse_complementary_sequence(dna_sequence):
+    dna_sequence= dna_sequence.upper()
+    complement = {'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C', 'N': 'N'}
+    reverse_complementary_seq = ''.join(complement[base] for base in reversed(dna_sequence))
+    return reverse_complementary_seq
+
+
+
 
 
 def get_keys(fasta_path):

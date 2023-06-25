@@ -7,7 +7,7 @@ from collections import defaultdict
 import re
 import pandas as pd 
 import numpy as np
-from src.Parser.parser_helpers import get_keys, remove_dups, complementary, sequence_len_tuner
+from src.Parser.parser_helpers import get_keys, remove_dups, reverse_complementary_sequence, sequence_len_tuner
 from src.Parser.parser_helpers import all_chr_dict, positive_chr_dict, create_control_seq, create_control_seq_y
 
 
@@ -58,7 +58,7 @@ def parse_bed_file(**kwargs):     # Main parser function
                 f.write(key+"\t"+str(seq+sequence_len)+"\t"+str(seq+sequence_len)+"\t"+str(counter)+"\t.\t+\n")
                 counter+=1
 
-                
+
     table=pd.read_csv("data/parsed_data/Flybase_dm6_TSSs_cleaned.bed",delimiter='\t')
 
     if show_sequence_legth:   
@@ -74,7 +74,7 @@ def parse_bed_file(**kwargs):     # Main parser function
         end_pos=table.iloc[i][1]+sequence_len
         sequence="".join(strand[start_pos:end_pos+1].upper())
         if(table.iloc[i][5]=="-"):
-            sequence=complementary(sequence)
+            sequence=reverse_complementary_sequence(sequence)
         if(table.iloc[i][3][0]=="F"):
             label="TSS"
             tss_value=1
