@@ -123,3 +123,17 @@ def create_control_seq_y(chromosome_dict, records_dict ,sequence_len):
             samples.append(control_start)
             break
     return samples
+
+
+
+
+def cofactor_name_exractor(expression_dataframe):
+
+    columns = expression_dataframe.columns
+
+    cofactors =columns[2:].to_list()
+
+    return cofactors
+
+
+

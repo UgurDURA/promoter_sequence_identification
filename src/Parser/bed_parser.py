@@ -68,6 +68,7 @@ def parse_bed_file(**kwargs):     # Main parser function
         df = pd.DataFrame(columns=['set','TSS','seqnames','start','end','strand','id','sequence'])
 
     entry_array=[]
+    
     for i in range(len(table)):
         strand=records_dict[chromosome_dict[table.iloc[i][0]]].seq
         start_pos=table.iloc[i][1]-sequence_len

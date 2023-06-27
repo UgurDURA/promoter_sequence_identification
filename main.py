@@ -1,4 +1,5 @@
-from src.Parser.parser import parse_bed_file
+from src.Parser.bed_parser import parse_bed_file
+from src.Parser.
 from Bio import SeqIO
 from Bio.Seq import Seq
 
