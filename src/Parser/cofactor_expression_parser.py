@@ -17,9 +17,14 @@ import math
 import re
 
 
-from src.Parser.parser_helpers import cofactor_name_exractor,get_keys
+from src.Parser.parser_helpers import cofactor_name_exractor,get_keys, reverse_complementary_sequence
 
-def cofactor_expression_parser(expression_path, fasta_path):
+def cofactor_expression_parser(**kwargs):
+
+    fasta_path =kwargs.pop('fasta_path') 
+    expression_path = kwargs.pop('expression_path')
+    records = kwargs.pop('records')
+    show_sequence_legth = kwargs.pop("show_sequence_legth")
 
     cofactor_dataframe = pd.read_excel(expression_path)
 
@@ -60,10 +65,70 @@ def cofactor_expression_parser(expression_path, fasta_path):
 
 
     
-    ### Need to be discussed with Monika 
+    # TODO Need to be discussed with Monika 
     descriptions['chrM'] = 'NC_024511.2'
     descriptions['chrU']= 'NW_007931084.1'
     descriptions['chrUextra']= 'NW_007931084.1'
+
+
+    list_tuple_TSS = []
+
+
+    for i in range(len(id)):
+        id_= id[i]
+        chromosome_ = chromosome_keys[i]
+        start_index_ = start_index[i]
+        end_index_ = end_index[i]
+        strand_ = strand[i]
+        
+        if chromosome_ != 'chrU' or 'chrUextra':
+            gene_ID = descriptions[chromosome_]
+            sequence = str(records[gene_ID].seq)
+
+            sequence = sequence[start_index_:end_index_+1]
+            sequence = sequence.upper()
+
+            if strand == "-":
+                sequence = reverse_complementary_sequence(sequence)
+
+            
+            
+            
+            if show_sequence_legth:
+                new_row  = ("1",
+                            chromosome_, 
+                            str(start_index_), 
+                            str(end_index_), 
+                            strand_, 
+                            id_, 
+                            sequence, 
+                            str(len(sequence)))
+            else:
+                new_row  = ("1",
+                            chromosome_, 
+                            str(start_index_), 
+                            str(end_index_), 
+                            strand_, 
+                            id_, 
+                            sequence)
+            
+
+            list_tuple_TSS.append(new_row)
+    
+
+    if show_sequence_legth:   
+    
+        expression_dataframe= pd.DataFrame(list_tuple_TSS, columns=['TSS','seqnames', 'start', 'end', 'strand', 'ID', 'sequence', 'sequence_len'])
+    else: 
+            expression_dataframe= pd.DataFrame(list_tuple_TSS, columns=['TSS','seqnames', 'start', 'end', 'strand', 'ID', 'sequence'])
+
+    
+    expression_dataframe[cofactors] = expression_list_oflist
+
+    expression_dataframe.to_csv('data/parsed_data/cofactor_expression_data_csv',index=True)
+
+
+
 
 
 
