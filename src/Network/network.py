@@ -1,0 +1,237 @@
+import torch
+import torch.nn as nn
+import pandas as pd
+import numpy as np
+from torch.utils.data import DataLoader
+df=pd.read_csv("train_data.csv")
+np_array_all=df.to_numpy()
+np_array_2R = np_array_all[np_array_all[:,2] == "chr2R"]
+# print(np_array_2R)
+np_array_2R = np_array_2R[:,(0,1,7)]
+
+# print(np_array_2R)
+# print(np_array_2R.shape)
+# print(len(np_array_2R))
+
+np.random.shuffle(np_array_2R)
+# print(np_array_2R)
+# print(np_array_2R.shape)
+# print(len(np_array_2R))
+
+np_array_2R[:len(np_array_2R)//2,0] = 1 #validation
+np_array_2R[len(np_array_2R)//2:,0] = 2 #test
+np_array_train = np_array_all[np_array_all[:,2] != "chr2R"]
+np_array_train = np_array_train[:,(0,1,7)]
+np_array_train[:,0] = 0
+# print(np_array_train)
+# print(np_array_train.shape)
+
+# First, we exploit the fact that numbers are also integers (ASCII code)
+# To build a vector which maps letters to an index
+codetable = np.zeros(256,np.int64)
+for ix,nt in enumerate(["A","C","G","T"]):
+  codetable[ord(nt)] = ix
+# Now we use numpy indexing, using the letters in our sequence as index
+# to extract the correct positions from our code table
+categorical_vector_2R = np.zeros((len(np_array_2R),len(np_array_2R[0, 2])),dtype=np.int64)
+categorical_vector_train = np.zeros((len(np_array_train),len(np_array_train[0, 2])),dtype=np.int64)
+
+for i in range (0,len(np_array_train)):
+    categorical_vector_train[i] = codetable[np.array(list(np_array_train[i,2])).view(np.int32)]
+for i in range (0,len(np_array_2R)):
+    categorical_vector_2R[i] = codetable[np.array(list(np_array_2R[i,2])).view(np.int32)]
+
+# def create_ohe_tensor(array_data,categorical_vector):
+#   #np_array_first_part=array_data[:,:2]
+#   #np_array_first_part=(np_array_first_part).astype(np.int64)
+#   #tensor_first_part=torch.tensor(np_array_first_part)
+#   #tensor_second_part=torch.nn.functional.one_hot(torch.from_numpy(categorical_vector), num_classes=4)
+#   #tensor_second_part=torch.flatten(tensor_second_part,1,2)
+#   #tensor_data=torch.cat((tensor_first_part,tensor_second_part),1)
+#   return tensor_data
+
+#tensor_train=create_tensor(np_array_train,categorical_vector_train)
+#tensor_2R=create_tensor(np_array_2R,categorical_vector_2R)
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+train_labels=torch.tensor(np_array_train[:,1].astype(np.int64))
+valtest_labels=torch.tensor(np_array_2R[:,1].astype(np.int64))
+train_samples = torch.nn.functional.one_hot(torch.from_numpy(categorical_vector_train), num_classes=4)
+valtest_samples = torch.nn.functional.one_hot(torch.from_numpy(categorical_vector_2R), num_classes=4)
+
+train_labels = train_labels.to(device)
+valtest_labels = valtest_labels.to(device)
+train_samples = train_samples.to(device)
+valtest_samples = valtest_samples.to(device)
+# print(train_labels.shape)
+# print(valtest_labels.shape)
+# print(train_samples.shape)
+# print(valtest_samples.shape)
+# print(train_labels.dtype)
+# print(valtest_labels.dtype)
+# print(train_samples.dtype)
+# print(valtest_samples.dtype)
+# print(valtest_samples[:len(np_array_2R)//2].shape)
+# print(valtest_samples[len(np_array_2R)//2:].shape)
+train_dataset=torch.utils.data.TensorDataset(train_samples,train_labels)
+val_dataset=torch.utils.data.TensorDataset(valtest_samples[:len(np_array_2R)//2],valtest_labels[:len(np_array_2R)//2])
+test_dataset=torch.utils.data.TensorDataset(valtest_samples[len(np_array_2R)//2:],valtest_labels[len(np_array_2R)//2:])
+
+train_dataloader = DataLoader(train_dataset, batch_size=64, shuffle=True)
+val_dataloader = DataLoader(val_dataset, batch_size=64) #have validation come at the same order every time -default shuffle = False
+test_dataloader = DataLoader(test_dataset, batch_size=64) #have test come at the same order every time -default shuffle = False
+
+# features,labels=next(iter(train_dataloader))
+# print(features[0])
+# print(labels[0])
+
+hparams =             {'batch_size': 64, # number of examples per batch
+                      'epochs': 10, # number of epochs SHOULD BE 100
+                      #'early_stop': 10, # patience of 10 epochs to reduce training time; you can increase the patience to see if the model improves after more epochs
+                      'lr': 0.001, # learning rate
+                      #'n_conv_layer': 3, # number of convolutional layers
+                      'num_filters1': 128, # number of filters/kernels in the first conv layer
+                      'num_filters2': 60, # number of filters/kernels in the second conv layer
+                      'num_filters3': 60, # number of filters/kernels in the third conv layer
+                      'num_filters4': 120,
+                      'kernel_size1': 7, # size of the filters in the first conv layer
+                      'kernel_size2': 3, # size of the filters in the second conv layer
+                      'kernel_size3': 5, # size of the filters in the third conv layer
+                      'kernel_size4': 3,
+                      'n_dense_layer': 1, # number of dense/fully connected layers
+                      'dense_neurons1': 64, # number of neurons in the dense layer
+                      'dense_neurons2': 256,
+                      'dropout_prob': 0.4, # dropout probability
+                      }
+
+
+
+class DeepSTARR(nn.Module):
+    def __init__(self, hparams):
+        """
+        Initialize your model from a given dict containing all your hparams
+        """
+        super().__init__()
+        self.hparams = hparams
+      
+        self.model = nn.Sequential(
+            nn.Conv1d(in_channels=4, out_channels=self.hparams['num_filters1'], kernel_size=self.hparams['kernel_size1'], stride=1, bias=False, padding=(self.hparams['kernel_size1']-1)//2),
+            nn.BatchNorm1d(self.hparams['num_filters1']),
+            nn.ReLU(),
+            nn.MaxPool1d(2,stride =2),
+            #nn.Dropout(p = self.hparams['dropout_prob']),
+            
+            nn.Conv1d(in_channels=self.hparams['num_filters1'], out_channels=self.hparams['num_filters2'], kernel_size=self.hparams['kernel_size2'], stride=1, bias=False, padding=(self.hparams['kernel_size2']-1)//2),
+            nn.BatchNorm1d(self.hparams['num_filters2']),
+            nn.ReLU(),
+            nn.MaxPool1d(2, stride = 2),
+            nn.Dropout(p= self.hparams['dropout_prob']),
+
+            nn.Conv1d(in_channels=self.hparams['num_filters2'], out_channels=self.hparams['num_filters3'], kernel_size=self.hparams['kernel_size3'], stride=1, bias=False, padding=(self.hparams['kernel_size3']-1)//2),
+            nn.BatchNorm1d(self.hparams['num_filters3']),
+            nn.ReLU(),
+            nn.MaxPool1d(2, stride = 2),
+            nn.Dropout(p= self.hparams['dropout_prob']),
+
+            nn.Conv1d(in_channels=self.hparams['num_filters3'], out_channels=self.hparams['num_filters4'], kernel_size=self.hparams['kernel_size4'], stride=1, bias=False, padding=(self.hparams['kernel_size4']-1)//2),
+            nn.BatchNorm1d(self.hparams['num_filters4']),
+            nn.ReLU(),
+            nn.MaxPool1d(2, stride = 2),
+            nn.Dropout(p= self.hparams['dropout_prob']),
+        )
+
+        self.classifier =  nn.Sequential(
+            nn.Linear(1800, self.hparams['dense_neurons2']), #based on deepstarr 31*60 dimensions
+            nn.BatchNorm1d(self.hparams['dense_neurons2']),
+            nn.ReLU(),
+            nn.Dropout(p= self.hparams['dropout_prob']),
+
+            nn.Linear(self.hparams['dense_neurons2'],self.hparams['dense_neurons1']),
+            nn.BatchNorm1d(self.hparams['dense_neurons1']),
+            nn.ReLU(),
+            nn.Dropout(p= self.hparams['dropout_prob']),
+
+            nn.Linear(self.hparams['dense_neurons1'],1),
+            nn.Sigmoid()
+        )
+
+        pass
+
+    def forward(self, x):
+        x = torch.permute(x, (0, 2, 1))
+        x = x.to(torch.float32)
+        #to avoid RuntimeError: Input type (torch.cuda.LongTensor) and weight type (torch.cuda.FloatTensor) should be the same
+        #could converting from floattensor (int64?) to float32 cause a problem with values precision?
+        x = self.model(x)
+        #print(x.shape)
+        #x = x.view(x.shape[0], -1)
+        #print(x.shape)
+        x = torch.flatten(x, start_dim=1) #keep nsamples dim and flatten the 2 rest dimensions to pass in linear
+        #print(x.shape)
+        #print(x.shape)
+        x = self.classifier(x)
+
+        pass
+
+        ########################################################################
+        #                           END OF YOUR CODE                           #
+        ########################################################################
+        return x
+
+def train_model(model, train_loader, val_loader):
+    """
+    Train the model for a number of epochs.
+    """
+    optimizer = torch.optim.Adam(model.parameters(), lr=model.hparams['lr'])
+    training_loss = 0
+    validation_loss = 0
+    for epoch in range(model.hparams['epochs']):
+        
+        # Training stage, where we want to update the parameters.
+        model.train()  # Set the model to training mode
+        
+        # # Create a progress bar for the training loop.
+        # training_loop = create_tqdm_bar(train_loader, desc=f'Training Epoch [{epoch}/{epochs}]')
+        for batch_samples, batch_labels in train_loader:
+            optimizer.zero_grad() # Reset the gradients - VERY important! Otherwise they accumulate.
+            #samples, labels = batch["image"].to(device), batch["keypoints"].to(device)
+            # Flatten the images to a vector. This is done because the model expects a vector as input.
+            # Could also be done by reshaping the images in the dataset.
+            pred = model(batch_samples)
+            
+            #print(batch_labels.unsqueeze(1).shape)
+            # print(batch_labels)
+            # print(batch_labels.float().dtype)
+            # print(pred.shape)
+            # print(pred)
+            # print(pred.dtype)
+            bceloss = nn.BCELoss()
+            loss = bceloss(pred,batch_labels.unsqueeze(1).float()) #unsqueeze and float to match dimensions and dtype
+            loss.backward()  # Stage 2: Backward().
+            optimizer.step() # Stage 3: Update the parameters.
+
+            #CALCULATE ACCURACY
+            if epoch == model.hparams['epochs'] - 1: # Save the last epoch's loss.
+                training_loss += loss.item()
+
+        # Validation stage, where we don't want to update the parameters. Pay attention to the model.eval() line
+        # and "with torch.no_grad()" wrapper.
+        model.eval()
+
+        validation_loss = 0
+        with torch.no_grad():
+            for batch_samples, batch_labels in val_loader:
+                pred = model(batch_samples)
+                bceloss = nn.BCELoss()
+                loss = bceloss(pred,batch_labels.unsqueeze(1).float())
+                validation_loss += loss.item()
+        print(validation_loss)
+                #CALCULATE ACCURACY
+pass
+
+model = DeepSTARR(hparams)
+train_model(model.to(device), train_dataloader, val_dataloader)
+
+
+
+
