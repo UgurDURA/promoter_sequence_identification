@@ -18,14 +18,15 @@ import re
 
 
 
-from src.Parser.parser_helpers import cofactor_name_exractor,get_keys, reverse_complementary_sequence, progress_bar
+from src.Parser.parser_helpers import cofactor_name_exractor,get_keys, reverse_complementary_sequence, progress_bar, list_to_queue
 
 def cofactor_expression_parser(**kwargs):
 
     fasta_path =kwargs.pop('fasta_path') 
     expression_path = kwargs.pop('expression_path')
-    records = kwargs.pop('records')
+    records_dict = kwargs.pop('records_dict')
     show_sequence_legth = kwargs.pop("show_sequence_legth")
+    descriptions = kwargs.pop('chromosome_dict')
 
     cofactor_dataframe = pd.read_excel(expression_path)
 
@@ -40,6 +41,8 @@ def cofactor_expression_parser(**kwargs):
     TSS_start_index = []
     strand = []
     expression_list_oflist = []
+
+
 
     pattern = r"^(chr\w+?)(?:Het)?_(\d+)_(\d+)_(\d+)_(\+|-)_\w+$"
 
@@ -73,30 +76,37 @@ def cofactor_expression_parser(**kwargs):
     # descriptions['chrUextra']= 'NW_007931084.1'
 
 
+    id = list_to_queue(id)
+    chromosome_keys = list_to_queue(chromosome_keys)
+    start_index = list_to_queue(start_index)
+    end_index = list_to_queue(end_index)
+    TSS_start_index = list_to_queue(TSS_start_index)
+    strand = list_to_queue(strand)
+
+
+
     list_tuple_TSS = []
 
-    total_items = len(id)
+    total_items = id.qsize()
 
-    for i in range(len(id)):
+    for i in range(total_items):
 
         progress_bar(i + 1, total_items, prefix='Progress:', suffix='Parsing the Cofactor Data', length=30)
-        id_= id[i]
-        chromosome_ = chromosome_keys[i]
-        start_index_ = start_index[i]
-        end_index_ = end_index[i]
-        strand_ = strand[i]
+        id_= id.get()
+        chromosome_ = chromosome_keys.get()
+        start_index_ = start_index.get()
+        end_index_ = end_index.get()
+        strand_ = strand.get()
         
         if chromosome_ != 'chrU' and chromosome_ != 'chrUextra' and chromosome_ !=  'chrM':
             gene_ID = descriptions[chromosome_]
-            sequence = str(records[gene_ID].seq)
+            sequence = (records_dict[gene_ID]).seq
 
             sequence = sequence[start_index_:end_index_+1]
             sequence = sequence.upper()
 
             if strand == "-":
                 sequence = reverse_complementary_sequence(sequence)
-
-            
             
             
             if show_sequence_legth:

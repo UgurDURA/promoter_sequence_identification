@@ -16,20 +16,15 @@ def parse_bed_file(**kwargs):     # Main parser function
 
     fasta_path =kwargs.pop('fasta_path') 
     bed_path = kwargs.pop('bed_path')
-    records = kwargs.pop('records')
+    records_dict = kwargs.pop('records_dict')
     show_sequence_legth = kwargs.pop("show_sequence_legth")
     sequence_length = kwargs.pop("sequence_length")
+    chromosome_dict = kwargs.pop('chromosome_dict')
 
     assert sequence_length % 2 != 0, "Requested length of the sequence must be an odd number eg. 249 "
 
     sequence_len = sequence_len_tuner(sequence_length)
 
-
-
-    
-    chromosome_dict = get_keys(fasta_path)     # retrieves all the keys (accesiable) from fasta file as dictionary
-    values=[(key,value) for key, value in records.items() if 'NC' in key or 'NT' in key]
-    records_dict=dict(values)
 
     remove_dups(bed_path)
 

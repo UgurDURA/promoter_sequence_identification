@@ -2,6 +2,8 @@ import torch
 import pandas as pd
 import numpy as np
 from torch.utils.data import DataLoader
+
+
 df=pd.read_csv("train_data.csv")
 np_array_all=df.to_numpy()
 np_array_2R = np_array_all[np_array_all[:,2] == "chr2R"]

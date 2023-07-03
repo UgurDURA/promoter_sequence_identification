@@ -2,9 +2,17 @@
 import string 
 import re
 import random as rnd
-
+import queue
 
 import time
+
+
+
+def list_to_queue(lst):
+    q = queue.Queue()
+    for item in lst:
+        q.put(item)
+    return q
 
 def progress_bar(iteration, total, prefix='', suffix='', decimals=1, length=50, fill='█'):
     percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
