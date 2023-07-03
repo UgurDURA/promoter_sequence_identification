@@ -93,7 +93,11 @@ def parse_bed_file(**kwargs):     # Main parser function
     df=df._append(entry_array,ignore_index=True)
     df_shuffled = df.sample(frac=1).reset_index(drop=True)
 
+    pars_path = "data/parsed_data/train_data.csv"
 
-    df_shuffled.to_csv("data/parsed_data/train_data.csv",index=True)
+
+    df_shuffled.to_csv(pars_path,index=True)
+
+    return pars_path
 
     

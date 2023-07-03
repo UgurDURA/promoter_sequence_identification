@@ -140,7 +140,11 @@ def cofactor_expression_parser(**kwargs):
     
     expression_dataframe[cofactors] = expression_list_oflist
 
-    expression_dataframe.to_csv('data/parsed_data/cofactor_expression_data.csv',index=True)
+    pars_path = 'data/parsed_data/cofactor_expression_data.csv'
+
+    expression_dataframe.to_csv(pars_path,index=True)
+
+    return pars_path
 
 
 
