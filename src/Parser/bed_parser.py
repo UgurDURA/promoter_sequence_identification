@@ -7,7 +7,7 @@ from collections import defaultdict
 import re
 import pandas as pd 
 import numpy as np
-from src.Parser.parser_helpers import get_keys, remove_dups, reverse_complementary_sequence, sequence_len_tuner
+from src.Parser.parser_helpers import get_keys, remove_dups, reverse_complementary_sequence, sequence_len_tuner, progress_bar
 from src.Parser.parser_helpers import all_chr_dict, positive_chr_dict, create_control_seq, create_control_seq_y
 
 
@@ -68,8 +68,11 @@ def parse_bed_file(**kwargs):     # Main parser function
         df = pd.DataFrame(columns=['set','TSS','seqnames','start','end','strand','id','sequence'])
 
     entry_array=[]
+
+    total_items = len(table)
     
     for i in range(len(table)):
+        progress_bar(i + 1, total_items, prefix='Progress:', suffix='Parsing the TSS .bed File', length=30)
         strand=records_dict[chromosome_dict[table.iloc[i][0]]].seq
         start_pos=table.iloc[i][1]-sequence_len
         end_pos=table.iloc[i][1]+sequence_len

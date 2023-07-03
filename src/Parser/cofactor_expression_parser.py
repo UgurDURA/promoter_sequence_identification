@@ -17,7 +17,8 @@ import math
 import re
 
 
-from src.Parser.parser_helpers import cofactor_name_exractor,get_keys, reverse_complementary_sequence
+
+from src.Parser.parser_helpers import cofactor_name_exractor,get_keys, reverse_complementary_sequence, progress_bar
 
 def cofactor_expression_parser(**kwargs):
 
@@ -47,18 +48,19 @@ def cofactor_expression_parser(**kwargs):
         match = re.search(pattern, sentence)
 
         if match:
-            id.append(sentence)
-            chromosome_keys.append(match.group(1))
-            start_index.append(int(match.group(2)))
-            end_index.append(int(match.group(3)))
-            TSS_start_index .append(int(match.group(4)))
-            strand.append(match.group(5))
-            expressions = []
-            for cofactor in cofactors:
-                expression_level = cofactor_dataframe[cofactor][i]
-                expressions.append(expression_level)
-        
-            expression_list_oflist.append(expressions)
+            if match.group(1) != 'chrU' and match.group(1) != 'chrUextra' and match.group(1) !=  'chrM':
+                id.append(sentence)
+                chromosome_keys.append(match.group(1))
+                start_index.append(int(match.group(2)))
+                end_index.append(int(match.group(3)))
+                TSS_start_index .append(int(match.group(4)))
+                strand.append(match.group(5))
+                expressions = []
+                for cofactor in cofactors:
+                    expression_level = cofactor_dataframe[cofactor][i]
+                    expressions.append(expression_level)
+            
+                expression_list_oflist.append(expressions)
 
 
     descriptions = get_keys(fasta_path)
@@ -66,22 +68,25 @@ def cofactor_expression_parser(**kwargs):
 
     
     # TODO Need to be discussed with Monika 
-    descriptions['chrM'] = 'NC_024511.2'
-    descriptions['chrU']= 'NW_007931084.1'
-    descriptions['chrUextra']= 'NW_007931084.1'
+    # descriptions['chrM'] = 'NC_024511.2'
+    # descriptions['chrU']= 'NW_007931084.1'
+    # descriptions['chrUextra']= 'NW_007931084.1'
 
 
     list_tuple_TSS = []
 
+    total_items = len(id)
 
     for i in range(len(id)):
+
+        progress_bar(i + 1, total_items, prefix='Progress:', suffix='Parsing the Cofactor Data', length=30)
         id_= id[i]
         chromosome_ = chromosome_keys[i]
         start_index_ = start_index[i]
         end_index_ = end_index[i]
         strand_ = strand[i]
         
-        if chromosome_ != 'chrU' or 'chrUextra':
+        if chromosome_ != 'chrU' and chromosome_ != 'chrUextra' and chromosome_ !=  'chrM':
             gene_ID = descriptions[chromosome_]
             sequence = str(records[gene_ID].seq)
 
@@ -125,7 +130,7 @@ def cofactor_expression_parser(**kwargs):
     
     expression_dataframe[cofactors] = expression_list_oflist
 
-    expression_dataframe.to_csv('data/parsed_data/cofactor_expression_data_csv',index=True)
+    expression_dataframe.to_csv('data/parsed_data/cofactor_expression_data.csv',index=True)
 
 
 

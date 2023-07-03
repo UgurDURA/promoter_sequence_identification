@@ -13,3 +13,4 @@ src/Parser/__pycache__/parser.cpython-39.pyc
 src/Parser/__pycache__/parser_helpers.cpython-39.pyc
 data/raw_data/Haberle_COF_STAP_oligos.xlsx
 data/raw_data/Haberle_COF_STAP_oligos.txt
+data/parsed_data/cofactor_expression_data_csv
