@@ -2,9 +2,14 @@ from src.Parser.bed_parser import parse_bed_file
 from src.Parser.cofactor_expression_parser import cofactor_expression_parser
 from src.Parser.parser_helpers import get_keys
 from src.DataLoader.data_loader import dataLoader
+from src.Network.model import NeuralNetwork
 
 from Bio import SeqIO
-from Bio.Seq import Seq
+
+import torch
+import torch.nn as nn
+import torch.optim as optim
+
 
 
 bed_path= '/Users/ugur_dura/Desktop/IN2393-Machine Learning for Regulatory Genomics/Project/promoter_sequence_identification/Trial_Scripts/Flybase_dm6_TSSs.bed'
@@ -58,13 +63,75 @@ print("###############################   Parser is Started   ###################
 
 
 
-# parsed_bed_file_path = parse_bed_file(**arguments)
+parsed_bed_file_path = parse_bed_file(**arguments)
 parsed_cofactor_path = cofactor_expression_parser(**arguments)
 
 
 
+train_dataloader, val_dataloader, test_dataloader = dataLoader(parsed_cofactor_path, batch_size)
 
-train_data, val_data, test_data = dataLoader(parsed_cofactor_path, batch_size)
+
+# # Define the hyperparameters
+# input_size = 784  # Example: MNIST images (28x28) flattened to 784-dimensional vectors
+# hidden_size = 128
+# num_classes = 10
+# learning_rate = 0.001
+# num_epochs = 10
+
+
+# # Create an instance of the neural network
+# model = NeuralNetwork(input_size, hidden_size, num_classes)
+
+# # Define the loss function and optimizer
+# criterion = nn.CrossEntropyLoss()
+# optimizer = optim.SGD(model.parameters(), lr=learning_rate)
+
+# # Training loop
+# for epoch in range(num_epochs):
+#     model.train()  # Set the model to training mode
+#     for images, labels in train_dataloader:
+#         # Forward pass
+#         images = images.view(-1, input_size)
+#         outputs = model(images)
+#         loss = criterion(outputs, labels)
+        
+#         # Backward pass and optimization
+#         optimizer.zero_grad()
+#         loss.backward()
+#         optimizer.step()
+    
+#     # Evaluation on validation set
+#     model.eval()  # Set the model to evaluation mode
+#     with torch.no_grad():
+#         correct = 0
+#         total = 0
+#         for images, labels in val_dataloader:
+#             images = images.view(-1, input_size)
+#             outputs = model(images)
+#             _, predicted = torch.max(outputs.data, 1)
+#             total += labels.size(0)
+#             correct += (predicted == labels).sum().item()
+        
+#         accuracy = 100 * correct / total
+#         print(f'Epoch [{epoch+1}/{num_epochs}], Validation Accuracy: {accuracy:.2f}%')
+
+# # Evaluation on test set
+# model.eval()  # Set the model to evaluation mode
+# with torch.no_grad():
+#     correct = 0
+#     total = 0
+#     for images, labels in test_dataloader:
+#         images = images.view(-1, input_size)
+#         outputs = model(images)
+#         _, predicted = torch.max(outputs.data, 1)
+#         total += labels.size(0)
+#         correct += (predicted == labels).sum().item()
+
+#     accuracy = 100 * correct / total
+#     print(f'Test Accuracy: {accuracy:.2f}%')
+
+
+
 
 
 

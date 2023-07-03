@@ -16,6 +16,13 @@ from collections import deque
 import math
 import re
 
+import sys
+import os
+
+# Add the directory containing the module to the sys.path list
+module_directory = os.path.abspath('../')
+sys.path.insert(0, module_directory)
+
 
 
 from src.Parser.parser_helpers import cofactor_name_exractor,get_keys, reverse_complementary_sequence, progress_bar, list_to_queue

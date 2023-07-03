@@ -6,6 +6,13 @@ import queue
 
 import time
 
+import sys
+import os
+
+# Add the directory containing the module to the sys.path list
+module_directory = os.path.abspath('../')
+sys.path.insert(0, module_directory)
+
 
 
 def list_to_queue(lst):

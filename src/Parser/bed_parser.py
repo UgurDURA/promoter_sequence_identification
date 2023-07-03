@@ -1,5 +1,12 @@
 
- 
+import sys
+import os
+
+# Add the directory containing the module to the sys.path list
+module_directory = os.path.abspath('../')
+
+
+sys.path.insert(0, module_directory)
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
@@ -58,9 +65,9 @@ def parse_bed_file(**kwargs):     # Main parser function
 
     if show_sequence_legth:   
     
-        df = pd.DataFrame(columns=['set','TSS','seqnames','start','end','strand','id','sequence','sequence_len'])
+        df = pd.DataFrame(columns=[ 'TSS','seqnames','start','end','strand','id','sequence','sequence_len'])
     else: 
-        df = pd.DataFrame(columns=['set','TSS','seqnames','start','end','strand','id','sequence'])
+        df = pd.DataFrame(columns=['TSS','seqnames','start','end','strand','id','sequence'])
 
     entry_array=[]
 
@@ -83,9 +90,9 @@ def parse_bed_file(**kwargs):     # Main parser function
         id=str(table.iloc[i][3])+"_"+table.iloc[i][0]+":"+str(start_pos)+":"+table.iloc[i][5]+"_"+label
 
         if show_sequence_legth:
-            entry={'set':"train","TSS":tss_value,"seqnames":table.iloc[i][0],"start":start_pos,"end":end_pos,"strand":table.iloc[i][5],"id":id,"sequence":sequence, "sequence_len": len(sequence)}
+            entry={ "TSS":tss_value,"seqnames":table.iloc[i][0],"start":start_pos,"end":end_pos,"strand":table.iloc[i][5],"id":id,"sequence":sequence, "sequence_len": len(sequence)}
         else: 
-            entry={'set':"train","TSS":tss_value,"seqnames":table.iloc[i][0],"start":start_pos,"end":end_pos,"strand":table.iloc[i][5],"id":id,"sequence":sequence}
+            entry={"TSS":tss_value,"seqnames":table.iloc[i][0],"start":start_pos,"end":end_pos,"strand":table.iloc[i][5],"id":id,"sequence":sequence}
             
         entry_array.append(entry) 
 
