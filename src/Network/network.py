@@ -85,8 +85,8 @@ test_dataloader = DataLoader(test_dataset, batch_size=64) #have test come at the
 # print(features[0])
 # print(labels[0])
 
-hparams =             {'batch_size': 64, # number of examples per batch
-                      'epochs': 10, # number of epochs SHOULD BE 100
+hparams =             {'batch_size': 256,#64, # number of examples per batch
+                      'epochs': 50, # number of epochs SHOULD BE 100
                       #'early_stop': 10, # patience of 10 epochs to reduce training time; you can increase the patience to see if the model improves after more epochs
                       'lr': 0.001, # learning rate
                       #'n_conv_layer': 3, # number of convolutional layers
@@ -178,6 +178,8 @@ class DeepSTARR(nn.Module):
         ########################################################################
         return x
 
+
+#Taken and changed by i2dl TUM course exercises
 def train_model(model, train_loader, val_loader):
     """
     Train the model for a number of epochs.
@@ -185,18 +187,16 @@ def train_model(model, train_loader, val_loader):
     optimizer = torch.optim.Adam(model.parameters(), lr=model.hparams['lr'])
     training_loss = 0
     validation_loss = 0
+    size_train = len(train_loader.dataset)
+    size_val = len(val_loader.dataset)
     for epoch in range(model.hparams['epochs']):
         
         # Training stage, where we want to update the parameters.
         model.train()  # Set the model to training mode
-        
-        # # Create a progress bar for the training loop.
-        # training_loop = create_tqdm_bar(train_loader, desc=f'Training Epoch [{epoch}/{epochs}]')
-        for batch_samples, batch_labels in train_loader:
-            optimizer.zero_grad() # Reset the gradients - VERY important! Otherwise they accumulate.
+        correct_samples=0
+        for i, (batch_samples, batch_labels) in enumerate (train_loader):
+            optimizer.zero_grad()
             #samples, labels = batch["image"].to(device), batch["keypoints"].to(device)
-            # Flatten the images to a vector. This is done because the model expects a vector as input.
-            # Could also be done by reshaping the images in the dataset.
             pred = model(batch_samples)
             
             #print(batch_labels.unsqueeze(1).shape)
@@ -209,23 +209,29 @@ def train_model(model, train_loader, val_loader):
             loss = bceloss(pred,batch_labels.unsqueeze(1).float()) #unsqueeze and float to match dimensions and dtype
             loss.backward()  # Stage 2: Backward().
             optimizer.step() # Stage 3: Update the parameters.
-
+            
+            binary_pred = (pred > 0.5).float()
+            correct_samples += binary_pred.eq(batch_labels).sum()
+            if i % 100 == 0:
+                print(loss.item())
             #CALCULATE ACCURACY
-            if epoch == model.hparams['epochs'] - 1: # Save the last epoch's loss.
-                training_loss += loss.item()
-
+            # if epoch == model.hparams['epochs'] - 1: # Save the last epoch's loss.
+            #     training_loss += loss.item()
+        print(correct_samples/size_train)
         # Validation stage, where we don't want to update the parameters. Pay attention to the model.eval() line
         # and "with torch.no_grad()" wrapper.
         model.eval()
-
+        correct_samples = 0
         validation_loss = 0
         with torch.no_grad():
-            for batch_samples, batch_labels in val_loader:
+            for i, (batch_samples, batch_labels) in enumerate(val_loader):
                 pred = model(batch_samples)
                 bceloss = nn.BCELoss()
                 loss = bceloss(pred,batch_labels.unsqueeze(1).float())
                 validation_loss += loss.item()
+                correct_samples += binary_pred.eq(batch_labels).sum()
         print(validation_loss)
+        print(correct_samples/size_val)
                 #CALCULATE ACCURACY
 pass
 
