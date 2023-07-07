@@ -77,16 +77,17 @@ train_dataset=torch.utils.data.TensorDataset(train_samples,train_labels)
 val_dataset=torch.utils.data.TensorDataset(valtest_samples[:len(np_array_2R)//2],valtest_labels[:len(np_array_2R)//2])
 test_dataset=torch.utils.data.TensorDataset(valtest_samples[len(np_array_2R)//2:],valtest_labels[len(np_array_2R)//2:])
 
-train_dataloader = DataLoader(train_dataset, batch_size=64, shuffle=True)
-val_dataloader = DataLoader(val_dataset, batch_size=64) #have validation come at the same order every time -default shuffle = False
-test_dataloader = DataLoader(test_dataset, batch_size=64) #have test come at the same order every time -default shuffle = False
+# train_dataloader = DataLoader(train_dataset, batch_size=64, shuffle=True)
+# val_dataloader = DataLoader(val_dataset, batch_size=64) #have validation come at the same order every time -default shuffle = False
+# test_dataloader = DataLoader(test_dataset, batch_size=64) #have test come at the same order every time -default shuffle = False
 
 # features,labels=next(iter(train_dataloader))
 # print(features[0])
 # print(labels[0])
 
-hparams =             {'batch_size': 256,#64, # number of examples per batch
-                      'epochs': 50, # number of epochs SHOULD BE 100
+hparams =             {'batch_size_train': 128,#64, # number of examples per batch
+                      'batch_size_vt':128,
+                      'epochs': 100, # number of epochs SHOULD BE 100
                       #'early_stop': 10, # patience of 10 epochs to reduce training time; you can increase the patience to see if the model improves after more epochs
                       'lr': 0.001, # learning rate
                       #'n_conv_layer': 3, # number of convolutional layers
@@ -103,9 +104,12 @@ hparams =             {'batch_size': 256,#64, # number of examples per batch
                       'dense_neurons2': 256,
                       'dropout_prob': 0.4, # dropout probability
                       }
+train_dataloader = DataLoader(train_dataset, batch_size=hparams['batch_size_train'], shuffle=True)
+val_dataloader = DataLoader(val_dataset, batch_size=hparams['batch_size_vt']) #have validation come at the same order every time -default shuffle = False
+test_dataloader = DataLoader(test_dataset, batch_size=hparams['batch_size_vt']) #have test come at the same order every time -default shuffle = False
 
-
-
+#check initialization of layers (He, xavier. tensorflow probably initializes with Xavier) for convolutional layers
+#can also check bias term to True to match tensorflow implementation
 class DeepSTARR(nn.Module):
     def __init__(self, hparams):
         """
@@ -179,18 +183,22 @@ class DeepSTARR(nn.Module):
         return x
 
 
+#Also include test, right now only doing train and validation !!!!!!!!!!!!!! TRAIN FOR MORE EPOCHS, MAKE ARCHITECTURE BIGGGER, HYPERPARAMETERS CHECK
 #Taken and changed by i2dl TUM course exercises
 def train_model(model, train_loader, val_loader):
     """
     Train the model for a number of epochs.
     """
     optimizer = torch.optim.Adam(model.parameters(), lr=model.hparams['lr'])
-    training_loss = 0
-    validation_loss = 0
     size_train = len(train_loader.dataset)
     size_val = len(val_loader.dataset)
+    size_tloader = len(train_loader)
+    size_vloader = len(val_loader)
+    max_t_acc = 0
+    max_v_acc = 0 
     for epoch in range(model.hparams['epochs']):
         
+        training_loss = 0
         # Training stage, where we want to update the parameters.
         model.train()  # Set the model to training mode
         correct_samples=0
@@ -198,26 +206,26 @@ def train_model(model, train_loader, val_loader):
             optimizer.zero_grad()
             #samples, labels = batch["image"].to(device), batch["keypoints"].to(device)
             pred = model(batch_samples)
-            
-            #print(batch_labels.unsqueeze(1).shape)
-            # print(batch_labels)
-            # print(batch_labels.float().dtype)
-            # print(pred.shape)
             # print(pred)
-            # print(pred.dtype)
+            #print(batch_labels.unsqueeze(1))
+            #print(batch_labels.unsqueeze(1).float())
+            #print(pred)
+            # print((pred >= 0.5).float())
             bceloss = nn.BCELoss()
+            
             loss = bceloss(pred,batch_labels.unsqueeze(1).float()) #unsqueeze and float to match dimensions and dtype
             loss.backward()  # Stage 2: Backward().
             optimizer.step() # Stage 3: Update the parameters.
+             
+            binary_pred = (pred >= 0.5).float()   #>= so that we can study more sequences as positive
             
-            binary_pred = (pred > 0.5).float()
-            correct_samples += binary_pred.eq(batch_labels).sum()
-            if i % 100 == 0:
-                print(loss.item())
-            #CALCULATE ACCURACY
-            # if epoch == model.hparams['epochs'] - 1: # Save the last epoch's loss.
-            #     training_loss += loss.item()
-        print(correct_samples/size_train)
+            training_loss += loss.item()
+            correct_samples += binary_pred.eq(batch_labels.unsqueeze(1).float()).sum().item()
+
+        print("Epoch", epoch+1,":")
+        print("Average training loss is: {:.3f}".format(training_loss/size_tloader))
+        print("Training accuracy is: {:.3f}".format(correct_samples/size_train *100), "%")
+        max_t_acc = max(max_t_acc,correct_samples/size_train *100)
         # Validation stage, where we don't want to update the parameters. Pay attention to the model.eval() line
         # and "with torch.no_grad()" wrapper.
         model.eval()
@@ -228,11 +236,16 @@ def train_model(model, train_loader, val_loader):
                 pred = model(batch_samples)
                 bceloss = nn.BCELoss()
                 loss = bceloss(pred,batch_labels.unsqueeze(1).float())
+                binary_pred = (pred >= 0.5).float()
+
                 validation_loss += loss.item()
-                correct_samples += binary_pred.eq(batch_labels).sum()
-        print(validation_loss)
-        print(correct_samples/size_val)
-                #CALCULATE ACCURACY
+                correct_samples += binary_pred.eq(batch_labels.unsqueeze(1).float()).sum().item()
+        print("Epoch", epoch+1,":")
+        print("Average validation loss is: {:.3f}".format(validation_loss/size_vloader))
+        print("Validation accuracy is: {:.3f}".format(correct_samples/size_val *100), "%")
+        max_v_acc = max(max_v_acc,correct_samples/size_val *100)
+        print("\nBest training accuracy: {:.3f}".format(max_t_acc), "%")
+        print("Best validation accuracy: {:.3f}".format(max_v_acc), "%\n")
 pass
 
 model = DeepSTARR(hparams)
