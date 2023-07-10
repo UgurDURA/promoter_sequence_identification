@@ -18,6 +18,7 @@ import re
 
 import sys
 import os
+import numpy as np
 
 # Add the directory containing the module to the sys.path list
 module_directory = os.path.abspath('../')
@@ -29,15 +30,26 @@ from src.Parser.parser_helpers import cofactor_name_exractor,get_keys, reverse_c
 
 def cofactor_expression_parser(**kwargs):
 
-    fasta_path =kwargs.pop('fasta_path') 
+    fasta_path =kwargs.pop('dm3_fasta_path') 
     expression_path = kwargs.pop('expression_path')
-    records_dict = kwargs.pop('records_dict')
+    records_dict = kwargs.pop('records_dict_dm3')
     show_sequence_legth = kwargs.pop("show_sequence_legth")
-    descriptions = kwargs.pop('chromosome_dict')
+    descriptions = kwargs.pop('chromosome_dict_dm3')
 
     cofactor_dataframe = pd.read_excel(expression_path)
 
     cofactors = cofactor_name_exractor(cofactor_dataframe)
+
+    for i in cofactors:
+        print(i)
+        float_array = cofactor_dataframe[i]
+        filtered_array = float_array[float_array > 0]
+        min_value = np.min(filtered_array)
+        print('min:', min_value)
+        cofactor_dataframe.loc[float_array == 0, i] = min_value
+        cofactor_dataframe.loc[:, i] = np.log2(cofactor_dataframe[i])
+
+    cofactor_dataframe.loc[:, 'p65':'Mof'] = cofactor_dataframe.loc[:, 'p65':'Mof'].sub(cofactor_dataframe['GFP'], axis=0)
 
 
 
@@ -58,7 +70,7 @@ def cofactor_expression_parser(**kwargs):
         match = re.search(pattern, sentence)
 
         if match:
-            if match.group(1) != 'chrU' and match.group(1) != 'chrUextra' and match.group(1) !=  'chrM':
+            if match.group(1) != 'chrU' and match.group(1) != 'chrUextra' and match.group(1) !=  'chrM' and match.group(1) !=  'chrY':
                 id.append(sentence)
                 chromosome_keys.append(match.group(1))
                 start_index.append(int(match.group(2)))
@@ -73,7 +85,7 @@ def cofactor_expression_parser(**kwargs):
                 expression_list_oflist.append(expressions)
 
 
-    descriptions = get_keys(fasta_path)
+    # descriptions = get_keys(fasta_path)
 
 
     
@@ -105,7 +117,7 @@ def cofactor_expression_parser(**kwargs):
         end_index_ = end_index.get()
         strand_ = strand.get()
         
-        if chromosome_ != 'chrU' and chromosome_ != 'chrUextra' and chromosome_ !=  'chrM':
+        if chromosome_ != 'chrU' and chromosome_ != 'chrUextra' and chromosome_ !=  'chrM' and chromosome_ !=  'chrY':
             gene_ID = descriptions[chromosome_]
             sequence = (records_dict[gene_ID]).seq
 

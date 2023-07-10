@@ -1,6 +1,6 @@
 from src.Parser.bed_parser import parse_bed_file
 from src.Parser.cofactor_expression_parser import cofactor_expression_parser
-from src.Parser.parser_helpers import get_keys
+from src.Parser.parser_helpers import get_keys, get_keys_dm3
 from src.DataLoader.data_loader import dataLoader
 from src.Network.model import NeuralNetwork
 
@@ -13,7 +13,8 @@ import torch.optim as optim
 
 
 bed_path= '/Users/ugur_dura/Desktop/IN2393-Machine Learning for Regulatory Genomics/Project/promoter_sequence_identification/Trial_Scripts/Flybase_dm6_TSSs.bed'
-fasta_path = '/Users/ugur_dura/Desktop/IN2393-Machine Learning for Regulatory Genomics/Project/promoter_sequence_identification/Trial_Scripts/GCF_000001215.4_Release_6_plus_ISO1_MT_genomic.fa'
+dm6_fasta_path = '/Users/ugur_dura/Desktop/IN2393-Machine Learning for Regulatory Genomics/Project/promoter_sequence_identification/Trial_Scripts/GCF_000001215.4_Release_6_plus_ISO1_MT_genomic.fa'
+dm3_fasta_path = '/Users/ugur_dura/Desktop/IN2393-Machine Learning for Regulatory Genomics/Project/promoter_sequence_identification/data/raw_data/BDGP_R5_dm3.fa'
 expression_path = 'data/raw_data/Haberle_COF_STAP_oligos.xlsx'
 
 batch_size = 64
@@ -22,10 +23,19 @@ batch_size = 64
 
 
 
-records = SeqIO.to_dict(SeqIO.parse(open(fasta_path), 'fasta'))
+records = SeqIO.to_dict(SeqIO.parse(open(dm6_fasta_path), 'fasta'))
 values=[(key,value) for key, value in records.items() if 'NC' in key or 'NT' in key]
 records_dict = dict(values)
-chromosome_dict = get_keys(fasta_path)
+chromosome_dict = get_keys(dm6_fasta_path)
+
+
+records_dm3 = SeqIO.to_dict(SeqIO.parse(open(dm3_fasta_path), 'fasta'))
+values_dm3=[(key,value) for key, value in records_dm3.items()]
+records_dict_dm3 = dict(values_dm3)
+chromosome_dict_dm3 = get_keys_dm3(dm3_fasta_path)
+
+
+
 
 
 
@@ -34,10 +44,17 @@ arguments = {}
 
 arguments["bed_path"] = bed_path
 arguments['expression_path'] = expression_path
-arguments["fasta_path"] = fasta_path
+
+arguments["dm6_fasta_path"] = dm6_fasta_path
+arguments["dm3_fasta_path"] = dm3_fasta_path
+
 arguments["records_dict"] = records_dict
 arguments["show_sequence_legth"] = True
 arguments["chromosome_dict"] = chromosome_dict
+
+arguments["records_dict_dm3"] = records_dict_dm3
+arguments["show_sequence_legth"] = True
+arguments["chromosome_dict_dm3"] = chromosome_dict_dm3
 
 arguments["sequence_length"] = 249
 

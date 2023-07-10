@@ -21,7 +21,7 @@ from src.Parser.parser_helpers import all_chr_dict, positive_chr_dict, create_co
 
 def parse_bed_file(**kwargs):     # Main parser function
 
-    fasta_path =kwargs.pop('fasta_path') 
+    fasta_path =kwargs.pop('dm6_fasta_path') 
     bed_path = kwargs.pop('bed_path')
     records_dict = kwargs.pop('records_dict')
     show_sequence_legth = kwargs.pop("show_sequence_legth")

@@ -89,6 +89,29 @@ def get_keys(fasta_path):
     return descriptions
 
 
+def get_keys_dm3(fasta_path):
+    pattern = r'>\s*([^ ]+)\s+.*chromosome\s+([^\s]+)'
+
+    fasta_file = open(fasta_path, 'r')
+    fasta_lines = fasta_file.readlines()
+
+    descriptions = {}
+
+    print("Found Fasta Keys ---->>>\n" )
+
+    for line in fasta_lines:
+        if line.startswith('>'):
+            if not "sequence" in line:
+                line = line.replace('\n', '')
+                line = line.replace('>', '')
+                print(line)
+                descriptions[line] = line
+    
+
+
+    return descriptions
+
+
 
 
 
