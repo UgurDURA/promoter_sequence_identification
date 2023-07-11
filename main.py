@@ -12,9 +12,12 @@ import torch.optim as optim
 
 
 
-bed_path= '/Users/ugur_dura/Desktop/IN2393-Machine Learning for Regulatory Genomics/Project/promoter_sequence_identification/Trial_Scripts/Flybase_dm6_TSSs.bed'
-dm6_fasta_path = '/Users/ugur_dura/Desktop/IN2393-Machine Learning for Regulatory Genomics/Project/promoter_sequence_identification/Trial_Scripts/GCF_000001215.4_Release_6_plus_ISO1_MT_genomic.fa'
-dm3_fasta_path = '/Users/ugur_dura/Desktop/IN2393-Machine Learning for Regulatory Genomics/Project/promoter_sequence_identification/data/raw_data/BDGP_R5_dm3.fa'
+
+
+
+bed_path= 'data/raw_data/Flybase_dm6_TSSs.bed'
+dm6_fasta_path = 'data/raw_data/GCF_000001215.4_Release_6_plus_ISO1_MT_genomic.fa'
+dm3_fasta_path = 'data/raw_data/BDGP_R5_dm3.fa'
 expression_path = 'data/raw_data/Haberle_COF_STAP_oligos.xlsx'
 
 batch_size = 64
