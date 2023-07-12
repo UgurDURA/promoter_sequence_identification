@@ -7,7 +7,7 @@ df=pd.read_csv("cofactor_expression_data.csv")
 np_array_all=df.to_numpy()
 np_array_2R = np_array_all[np_array_all[:,2] == "chr2R"]
 # print(np_array_2R)
-data_range=(7,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)
+data_range=(7,9,10,18,19,22)
 np_array_2R = np_array_2R[:,data_range]
 
 #print(np_array_2R)
@@ -86,7 +86,7 @@ test_dataset=torch.utils.data.TensorDataset(valtest_samples[len(np_array_2R)//2:
 
 hparams =             {'batch_size_train': 128,#64, # number of examples per batch
                       'batch_size_vt':128,
-                      'epochs': 50, # number of epochs SHOULD BE 100
+                      'epochs': 100, # number of epochs SHOULD BE 100
                       #'early_stop': 10, # patience of 10 epochs to reduce training time; you can increase the patience to see if the model improves after more epochs
                       'lr': 0.001, # learning rate
                       #'n_conv_layer': 3, # number of convolutional layers
@@ -99,7 +99,7 @@ hparams =             {'batch_size_train': 128,#64, # number of examples per bat
                       'kernel_size3': 5, # size of the filters in the third conv layer
                       'kernel_size4': 3,
                       'n_dense_layer': 1, # number of dense/fully connected layers
-                      'dense_neurons1': 64, # number of neurons in the dense layer
+                      'dense_neurons1': 256, # number of neurons in the dense layer
                       'dense_neurons2': 256,
                       'dropout_prob': 0.3, # dropout probability
                       }
@@ -144,7 +144,7 @@ class DeepSTARR(nn.Module):
         )
 
         self.classifier =  nn.Sequential(
-            nn.Linear(960, self.hparams['dense_neurons2']), #based on deepstarr 31*60 dimensions
+            nn.Linear(960, self.hparams['dense_neurons2']),
             nn.BatchNorm1d(self.hparams['dense_neurons2']),
             nn.ReLU(),
             nn.Dropout(p= self.hparams['dropout_prob']),
@@ -154,9 +154,15 @@ class DeepSTARR(nn.Module):
             nn.ReLU(),
             nn.Dropout(p= self.hparams['dropout_prob']),
 
-            nn.Linear(self.hparams['dense_neurons1'],15)
+            #nn.Linear(self.hparams['dense_neurons1'],5)
             #nn.Sigmoid()
         )
+        self.linear_p65=nn.Linear(self.hparams['dense_neurons1'],1)
+        self.linear_p300=nn.Linear(self.hparams['dense_neurons1'],1)
+        self.linear_gfzf=nn.Linear(self.hparams['dense_neurons1'],1)
+        self.linear_chro=nn.Linear(self.hparams['dense_neurons1'],1)
+        self.linear_mof=nn.Linear(self.hparams['dense_neurons1'],1)
+
 
         pass
 
@@ -173,13 +179,18 @@ class DeepSTARR(nn.Module):
         #print(x.shape)
         #print(x.shape)
         x = self.classifier(x)
+        p65=self.linear_p65(x)
+        p300=self.linear_p300(x)
+        gfzf=self.linear_gfzf(x)
+        chro=self.linear_chro(x)
+        mof=self.linear_mof(x)
 
-        pass
+        
 
         ########################################################################
         #                           END OF YOUR CODE                           #
         ########################################################################
-        return x
+        return torch.cat((p65,p300,gfzf,chro,mof),dim=1)
 
 
 #Also include test, right now only doing train and validation !!!!!!!!!!!!!! TRAIN FOR MORE EPOCHS, MAKE ARCHITECTURE BIGGGER, HYPERPARAMETERS CHECK
@@ -205,6 +216,10 @@ def train_model(model, train_loader, val_loader,test_loader):
             optimizer.zero_grad()
             #samples, labels = batch["image"].to(device), batch["keypoints"].to(device)
             pred = model(batch_samples)
+            # print(pred.shape)
+            # print(pred.dtype)
+            # print(batch_labels.shape)
+            # print(batch_labels.dtype)
             # print(pred)
             # print(batch_labels)
             # print(pred.shape)
@@ -214,7 +229,7 @@ def train_model(model, train_loader, val_loader,test_loader):
             # print((pred >= 0.5).float())
             mseloss = nn.MSELoss()
             batch_labels = batch_labels.to(torch.float32)   #need to convert in order to calculate loss as a float and not a double
-            loss = mseloss(pred,batch_labels) #unsqueeze and float to match dimensions and dtype
+            loss=mseloss(pred,batch_labels) #unsqueeze and float to match dimensions and dtype
             loss.backward()  # Stage 2: Backward().
             optimizer.step() # Stage 3: Update the parameters.
              
