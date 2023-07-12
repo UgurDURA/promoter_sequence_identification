@@ -94,7 +94,7 @@ print("###############################   Parser is Finalized  ##################
 
 hparams =             {'batch_size_train':256,#64, # number of examples per batch
                       'batch_size_vt':256,
-                      'epochs': 100, # number of epochs SHOULD BE 100
+                      'epochs': 15, # number of epochs SHOULD BE 100
                       #'early_stop': 10, # patience of 10 epochs to reduce training time; you can increase the patience to see if the model improves after more epochs
                       'lr': 0.001, # learning rate
                       #'n_conv_layer': 3, # number of convolutional layers
