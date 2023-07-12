@@ -27,6 +27,7 @@ def parse_bed_file(**kwargs):     # Main parser function
     show_sequence_legth = kwargs.pop("show_sequence_legth")
     sequence_length = kwargs.pop("sequence_length")
     chromosome_dict = kwargs.pop('chromosome_dict')
+    output_path = kwargs.pop('output_path')
 
     assert sequence_length % 2 != 0, "Requested length of the sequence must be an odd number eg. 249 "
 
@@ -100,7 +101,7 @@ def parse_bed_file(**kwargs):     # Main parser function
     df=df._append(entry_array,ignore_index=True)
     df_shuffled = df.sample(frac=1).reset_index(drop=True)
 
-    pars_path = "data/parsed_data/train_data.csv"
+    pars_path = output_path + "parsed_bed_data.csv"
 
 
     df_shuffled.to_csv(pars_path,index=True)

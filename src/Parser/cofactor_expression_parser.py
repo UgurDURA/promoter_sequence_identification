@@ -35,6 +35,7 @@ def cofactor_expression_parser(**kwargs):
     records_dict = kwargs.pop('records_dict_dm3')
     show_sequence_legth = kwargs.pop("show_sequence_legth")
     descriptions = kwargs.pop('chromosome_dict_dm3')
+    output_path = kwargs.pop('output_path')
 
     cofactor_dataframe = pd.read_excel(expression_path)
 
@@ -159,7 +160,7 @@ def cofactor_expression_parser(**kwargs):
     
     expression_dataframe[cofactors] = expression_list_oflist
 
-    pars_path = 'data/parsed_data/cofactor_expression_data.csv'
+    pars_path = output_path + 'parsed_cofactor_expression_data.csv'
 
     expression_dataframe.to_csv(pars_path,index=True)
 

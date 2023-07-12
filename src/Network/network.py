@@ -3,7 +3,10 @@ import torch.nn as nn
 import pandas as pd
 import numpy as np
 from torch.utils.data import DataLoader
-df=pd.read_csv("train_data.csv")
+
+
+
+df=pd.read_csv("/Users/ugur_dura/Desktop/IN2393-Machine Learning for Regulatory Genomics/Project/promoter_sequence_identification/data/parsed_data/parsed_bed_data.csv")
 np_array_all=df.to_numpy()
 np_array_2R = np_array_all[np_array_all[:,2] == "chr2R"]
 # print(np_array_2R)
