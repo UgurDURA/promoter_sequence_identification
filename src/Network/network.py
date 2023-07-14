@@ -3,10 +3,7 @@ import torch.nn as nn
 import pandas as pd
 import numpy as np
 from torch.utils.data import DataLoader
-
-
-
-df=pd.read_csv("/Users/ugur_dura/Desktop/IN2393-Machine Learning for Regulatory Genomics/Project/promoter_sequence_identification/data/parsed_data/parsed_bed_data.csv")
+df=pd.read_csv("train_data.csv")
 np_array_all=df.to_numpy()
 np_array_2R = np_array_all[np_array_all[:,2] == "chr2R"]
 # print(np_array_2R)
@@ -90,7 +87,7 @@ test_dataset=torch.utils.data.TensorDataset(valtest_samples[len(np_array_2R)//2:
 
 hparams =             {'batch_size_train': 128,#64, # number of examples per batch
                       'batch_size_vt':128,
-                      'epochs': 100, # number of epochs SHOULD BE 100
+                      'epochs': 60, # number of epochs SHOULD BE 100
                       #'early_stop': 10, # patience of 10 epochs to reduce training time; you can increase the patience to see if the model improves after more epochs
                       'lr': 0.001, # learning rate
                       #'n_conv_layer': 3, # number of convolutional layers
@@ -105,7 +102,7 @@ hparams =             {'batch_size_train': 128,#64, # number of examples per bat
                       'n_dense_layer': 1, # number of dense/fully connected layers
                       'dense_neurons1': 64, # number of neurons in the dense layer
                       'dense_neurons2': 256,
-                      'dropout_prob': 0.4, # dropout probability
+                      'dropout_prob': 0.3, # dropout probability
                       }
 train_dataloader = DataLoader(train_dataset, batch_size=hparams['batch_size_train'], shuffle=True)
 val_dataloader = DataLoader(val_dataset, batch_size=hparams['batch_size_vt']) #have validation come at the same order every time -default shuffle = False
@@ -188,7 +185,7 @@ class DeepSTARR(nn.Module):
 
 #Also include test, right now only doing train and validation !!!!!!!!!!!!!! TRAIN FOR MORE EPOCHS, MAKE ARCHITECTURE BIGGGER, HYPERPARAMETERS CHECK
 #Taken and changed by i2dl TUM course exercises
-def train_model(model, train_loader, val_loader):
+def train_model(model, train_loader, val_loader,test_loader):
     """
     Train the model for a number of epochs.
     """
@@ -249,11 +246,28 @@ def train_model(model, train_loader, val_loader):
         max_v_acc = max(max_v_acc,correct_samples/size_val *100)
         print("\nBest training accuracy: {:.3f}".format(max_t_acc), "%")
         print("Best validation accuracy: {:.3f}".format(max_v_acc), "%\n")
+    
+    correct_samples = 0
+    size_testloader = len(test_loader)
+    test_loss = 0
+    size_test = len(test_loader.dataset)
+    with torch.no_grad():
+        for i, (batch_samples, batch_labels) in enumerate(test_loader):
+            pred = model(batch_samples)
+            bceloss = nn.BCELoss()
+            loss = bceloss(pred,batch_labels.unsqueeze(1).float())
+            binary_pred = (pred >= 0.5).float()
+
+            test_loss += loss.item()
+            correct_samples += binary_pred.eq(batch_labels.unsqueeze(1).float()).sum().item()
+    print("Average test loss is: {:.3f}".format(test_loss/size_testloader))
+    print("Test accuracy is: {:.3f}".format(correct_samples/size_test *100), "%")
 pass
 
 model = DeepSTARR(hparams)
-train_model(model.to(device), train_dataloader, val_dataloader)
+train_model(model.to(device), train_dataloader, val_dataloader, test_dataloader)
 
+#make something to save the best model checkpoint
 
 
 
