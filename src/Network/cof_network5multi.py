@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
 from torch.utils.data import DataLoader
 df=pd.read_csv("cofactor_expression_data.csv")
 np_array_all=df.to_numpy()
@@ -86,7 +88,7 @@ test_dataset=torch.utils.data.TensorDataset(valtest_samples[len(np_array_2R)//2:
 
 hparams =             {'batch_size_train': 128,#64, # number of examples per batch
                       'batch_size_vt':128,
-                      'epochs': 100, # number of epochs SHOULD BE 100
+                      'epochs': 60, # number of epochs SHOULD BE 100
                       #'early_stop': 10, # patience of 10 epochs to reduce training time; you can increase the patience to see if the model improves after more epochs
                       'lr': 0.001, # learning rate
                       #'n_conv_layer': 3, # number of convolutional layers
@@ -264,6 +266,14 @@ def train_model(model, train_loader, val_loader,test_loader):
         # print("\nBest training accuracy: {:.3f}".format(max_t_acc), "%")
         # print("Best validation accuracy: {:.3f}".format(max_v_acc), "%\n")
     
+    #do this to save best model every time
+    # torch.save(model.state_dict(), "trained_model.pth")
+    # print("Model saved successfully.")
+
+    # loaded_model = DeepSTARR(hparams)
+    # loaded_model.load_state_dict(torch.load("trained_model.pth"))
+    # loaded_model.to(device)
+    
     test_loss = 0
     size_testloader = len(test_loader)
     with torch.no_grad():
@@ -274,7 +284,40 @@ def train_model(model, train_loader, val_loader,test_loader):
             loss = mseloss(pred,batch_labels)
             test_loss += loss.item()
     print("Average test loss is: {:.3f}".format(test_loss/size_testloader))
-pass
+    
+    #PCC calculation for validation set
+    cofactor_names = ["p65", "Nej_p300", "gfzf", "Chro", "Mof"]
+    input = valtest_samples[:len(np_array_2R)//2]
+    output = model(input)
+    pred = output.detach().cpu().numpy()
+    target = valtest_labels[:len(np_array_2R)//2].detach().cpu().numpy()
+    PCC = []
+    for i in range(len(cofactor_names)):
+        PCC.append(np.corrcoef(pred[:, i], target[:, i])[1][0].round(3))
+    df = pd.DataFrame(PCC, cofactor_names, columns=["PCC"])
+    print(df)
+    def scatter_density(i):
+
+        g = sns.jointplot(x=target[:, i], y=pred[:, i], kind="kde", fill=True, color="red")
+        g.ax_marg_x.remove()
+        g.ax_marg_y.remove()
+
+        # Regression line
+
+        x0, x1 = g.ax_joint.get_xlim()
+        y0, y1 = g.ax_joint.get_ylim()
+        lims = [max(x0, y0), min(x1, y1)]
+        g.ax_joint.plot(lims, lims, 'w', linestyle='dashed', transform=g.ax_joint.transData, color='grey')
+
+        g.ax_joint.set_aspect('equal')
+
+        plt.xlabel('Real Value')
+        plt.ylabel('Predicted Value')
+        plt.title(str(cofactor_names[i] + '(PCC = ' + str(PCC[i]) + ')'))
+
+        plt.show()
+    for i in range(0,len(target[0])):
+        scatter_density(i)
 
 model = DeepSTARR(hparams)
 train_model(model.to(device), train_dataloader, val_dataloader,test_dataloader)
