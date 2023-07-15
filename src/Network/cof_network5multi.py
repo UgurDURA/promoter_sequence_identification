@@ -5,6 +5,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from torch.utils.data import DataLoader
+import shap
+
 df=pd.read_csv("cofactor_expression_data.csv")
 np_array_all=df.to_numpy()
 np_array_2R = np_array_all[np_array_all[:,2] == "chr2R"]
@@ -88,7 +90,7 @@ test_dataset=torch.utils.data.TensorDataset(valtest_samples[len(np_array_2R)//2:
 
 hparams =             {'batch_size_train': 128,#64, # number of examples per batch
                       'batch_size_vt':128,
-                      'epochs': 60, # number of epochs SHOULD BE 100
+                      'epochs': 5, # number of epochs SHOULD BE 100
                       #'early_stop': 10, # patience of 10 epochs to reduce training time; you can increase the patience to see if the model improves after more epochs
                       'lr': 0.001, # learning rate
                       #'n_conv_layer': 3, # number of convolutional layers
@@ -296,6 +298,8 @@ def train_model(model, train_loader, val_loader,test_loader):
         PCC.append(np.corrcoef(pred[:, i], target[:, i])[1][0].round(3))
     df = pd.DataFrame(PCC, cofactor_names, columns=["PCC"])
     print(df)
+
+
     def scatter_density(i):
 
         g = sns.jointplot(x=target[:, i], y=pred[:, i], kind="kde", fill=True, color="red")
@@ -318,6 +322,36 @@ def train_model(model, train_loader, val_loader,test_loader):
         plt.show()
     for i in range(0,len(target[0])):
         scatter_density(i)
+
+
+    #shap attempt
+    X_val = valtest_samples[:len(np_array_2R)//2].to(torch.float32)   #shouldn't be needed since we have torch.float32 inside model
+    np.random.seed(seed=1234)
+    #background = torch.tensor(X_val[np.random.choice(X_val.shape[0], 1, replace=False)])      #why do we do torch.tensor when X_val is already tensor and we just slice it
+    background = X_val[np.random.choice(X_val.shape[0], 1, replace=False)]
+    # background = background.to(device) #valtest_samples is already in device so not needed
+    # model.linear_p65
+    #explainer_p65 = shap.DeepExplainer((model, model.classifier), background) #(5, 7144, 960)
+    explainer_p65 = shap.DeepExplainer((model, model.linear_p65), background) #(5, 7144, 256)
+    
+    # print(model.linear_p65)
+    # print(model.linear_p300)
+    # device = X_val.device
+    # print(device)
+    # device = valtest_samples.device
+    # print(device)
+    # device = background.device
+    # print(device)
+    # explainer_p65 = shap.DeepExplainer(model, background)
+    # print(X_val.device)
+    # print(X_val.dtype)
+    shap_values = explainer_p65.shap_values(X_val)
+    arr = np.array(shap_values)
+    print(arr.size)
+    print(arr.shape)
+    # print(shap_values.size)
+    # print(len(shap_values))
+    #print(shap_values.dtype)
 
 model = DeepSTARR(hparams)
 train_model(model.to(device), train_dataloader, val_dataloader,test_dataloader)

@@ -87,11 +87,11 @@ test_dataset=torch.utils.data.TensorDataset(valtest_samples[len(np_array_2R)//2:
 
 hparams =             {'batch_size_train': 128,#64, # number of examples per batch
                       'batch_size_vt':128,
-                      'epochs': 5, # number of epochs SHOULD BE 100
+                      'epochs': 40, # number of epochs SHOULD BE 100
                       #'early_stop': 10, # patience of 10 epochs to reduce training time; you can increase the patience to see if the model improves after more epochs
-                      'lr': 0.001, # learning rate
+                      'lr': 0.002, # learning rate
                       #'n_conv_layer': 3, # number of convolutional layers
-                      'num_filters1': 128, # number of filters/kernels in the first conv layer
+                      'num_filters1': 256, # number of filters/kernels in the first conv layer
                       'num_filters2': 60, # number of filters/kernels in the second conv layer
                       'num_filters3': 60, # number of filters/kernels in the third conv layer
                       'num_filters4': 120,
@@ -100,7 +100,7 @@ hparams =             {'batch_size_train': 128,#64, # number of examples per bat
                       'kernel_size3': 5, # size of the filters in the third conv layer
                       'kernel_size4': 3,
                       'n_dense_layer': 1, # number of dense/fully connected layers
-                      'dense_neurons1': 64, # number of neurons in the dense layer
+                      'dense_neurons1': 256, # number of neurons in the dense layer
                       'dense_neurons2': 256,
                       'dropout_prob': 0.3, # dropout probability
                       }
@@ -244,24 +244,25 @@ def train_model(model, train_loader, val_loader,test_loader):
         print("Average validation loss is: {:.3f}".format(validation_loss/size_vloader))
         print("Validation accuracy is: {:.3f}".format(correct_samples/size_val *100), "%")
         max_v_acc = max(max_v_acc,correct_samples/size_val *100)
+        if(max_v_acc == correct_samples/size_val *100):
+            torch.save(model.state_dict(), "trained_model.pth")
         print("\nBest training accuracy: {:.3f}".format(max_t_acc), "%")
         print("Best validation accuracy: {:.3f}".format(max_v_acc), "%\n")
-    
-    #make something to save the best model checkpoint
+
     # torch.save(model.state_dict(), "trained_model.pth")
     # print("Model saved successfully.")
 
-    # loaded_model = DeepSTARR(hparams)
-    # loaded_model.load_state_dict(torch.load("trained_model.pth"))
-    # loaded_model.to(device)
-    
+    loaded_model = DeepSTARR(hparams)
+    loaded_model.load_state_dict(torch.load("trained_model.pth"))
+    loaded_model.to(device)
+    loaded_model.eval()
     correct_samples = 0
     size_testloader = len(test_loader)
     test_loss = 0
     size_test = len(test_loader.dataset)
     with torch.no_grad():
         for i, (batch_samples, batch_labels) in enumerate(test_loader):
-            pred = model(batch_samples)
+            pred = loaded_model(batch_samples)
             bceloss = nn.BCELoss()
             loss = bceloss(pred,batch_labels.unsqueeze(1).float())
             binary_pred = (pred >= 0.5).float()
@@ -275,7 +276,7 @@ pass
 model = DeepSTARR(hparams)
 train_model(model.to(device), train_dataloader, val_dataloader, test_dataloader)
 
-
+#make something to save the best model checkpoint
 
 
 
